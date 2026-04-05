@@ -2,8 +2,9 @@ import streamlit as st
 import sys
 import os
 
-# 1. Configuração da página (Deve ser a primeira linha do Streamlit)
-st.set_page_config(page_title="GlobalClause AI", page_icon="⚖️")
+# 1. Configuração da página (Interface Moderna)
+# Substituímos o emoji pela sua nova logo na aba do navegador
+st.set_page_config(page_title="GlobalClause AI", page_icon="logo_global_pro.png")
 
 # 2. A PONTE: Faz o Python enxergar a pasta 'backend'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,8 +18,14 @@ except Exception as e:
     backend_conectado = False
     st.stop()
 
-# --- INTERFACE VISUAL ---
-st.title("⚖️ GlobalClause AI")
+# --- INTERFACE VISUAL MODERNA ---
+# Exibe sua nova logo tecnológica no topo
+if os.path.exists("logo_global_pro.png"):
+    st.image("logo_global_pro.png", width=180)
+else:
+    # Caso a imagem ainda não tenha sido subida, mantém o título limpo
+    st.title("GLOBALCLAUSE AI")
+
 st.subheader("Gerador de Relatórios Jurídicos Seguros")
 st.write("Desenvolvido por: **Genailma Couto**")
 
@@ -43,27 +50,36 @@ with st.form("form_relatorio"):
     
     botao_gerar = st.form_submit_button("Gerar Relatório Seguro")
 
-# Lógica de processamento
+# --- LÓGICA DE PROCESSAMENTO (CORRIGIDA PARA NUVEM) ---
 if botao_gerar:
     if not pergunta or not senha:
         st.warning("Por favor, preencha a pergunta e a senha antes de continuar.")
     else:
         with st.spinner("A IA está analisando sua solicitação e gerando o documento seguro..."):
             try:
-                nome_arquivo = "Analise_GlobalClause.pdf"
+                # SOLUÇÃO DEFINITIVA PARA O ERRO [Errno 2]:
+                # Usamos a pasta /tmp, que é o padrão de gravação para servidores Linux (Streamlit Cloud)
+                nome_arquivo_baixar = "Analise_GlobalClause.pdf"
+                caminho_seguro = os.path.join("/tmp", nome_arquivo_baixar)
                 
-                # Chama a função do backend para gerar o PDF
-                gerar_pdf_protegido(pergunta, senha, nome_arquivo)
+                # 1. O backend gera o PDF direto no caminho autorizado (/tmp)
+                gerar_pdf_protegido(pergunta, senha, caminho_seguro)
                 
-                # Exibe o sucesso e o botão de download
+                # 2. Sucesso!
                 st.success("✅ Relatório gerado com sucesso!")
                 
-                with open(nome_arquivo, "rb") as f:
+                # 3. Lemos o arquivo da pasta temporária para disponibilizar o download
+                with open(caminho_seguro, "rb") as f:
                     st.download_button(
                         label="📥 Baixar Relatório (PDF)",
                         data=f,
-                        file_name=nome_arquivo,
+                        file_name=nome_arquivo_baixar,
                         mime="application/pdf"
                     )
             except Exception as error:
+                # Exibe o erro de forma clara se algo falhar
                 st.error(f"Ocorreu um erro técnico na geração: {error}")
+
+# Rodapé discreto
+st.markdown("---")
+st.caption("GlobalClause AI © 2026 | Inteligência Jurídica & Engenharia")
