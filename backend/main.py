@@ -1,4 +1,5 @@
 import os
+import streamlit as st
 from datetime import datetime
 from groq import Groq
 from dotenv import load_dotenv
@@ -7,18 +8,32 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from pypdf import PdfReader, PdfWriter
 
+# 1. Carrega o .env (funciona apenas localmente no seu PC)
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# 2. BUSCA A CHAVE NO LUGAR CERTO (O segredo está aqui!)
+# Tenta pegar do 'Secrets' do Streamlit (nuvem). Se não achar, pega do '.env' (PC)
+api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+
+if not api_key:
+    st.error("ERRO: API Key não encontrada! Verifique o painel Secrets no Streamlit.")
+    st.stop()
+
+# 3. Configura o cliente com a chave encontrada
+client = Groq(api_key=api_key)
 
 def gerar_pdf_protegido(pergunta, senha, caminho_final):
     # 🤖 Chamada da IA
-    completion = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": pergunta}]
-    )
-    texto_ia = completion.choices[0].message.content
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": pergunta}]
+        )
+        texto_ia = completion.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"Erro na Groq: {e}")
 
-    # 📂 Define rascunho temporário
+    # 📂 Define rascunho temporário na mesma pasta do arquivo final
     pasta_temp = os.path.dirname(caminho_final)
     temp_pdf = os.path.join(pasta_temp, "rascunho_processo.pdf")
     
@@ -46,5 +61,6 @@ def gerar_pdf_protegido(pergunta, senha, caminho_final):
     with open(caminho_final, "wb") as f:
         writer.write(f)
     
+    # Limpa o arquivo temporário
     if os.path.exists(temp_pdf):
         os.remove(temp_pdf)
